@@ -1,0 +1,14 @@
+node_modules
+src
+tests
+coverage
+.nyc_output
+.mocharc.json
+.vscode
+.env
+.eslintignore
+.eslintrc
+.gitignore
+tsconfig.json
+tsconfig.eslint.json
+tsconfig.spec.json

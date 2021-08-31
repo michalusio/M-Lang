@@ -1,0 +1,44 @@
+{
+  "name": "m-lang",
+  "version": "0.0.2",
+  "license": "ISC",
+  "maintainers": [
+    "Micha_i"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michalusio/M-Lang.git"
+  },
+  "bugs": {
+    "url": "https://github.com/michalusio/M-Lang/issues"
+  },
+  "homepage": "https://github.com/michalusio/M-Lang#readme",
+  "description": "My own programming language made using my parser combinator library. Plus a compiler for https://github.com/0xffset/0x.",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node .",
+    "lint": "eslint . --ext .ts",
+    "test:unit": "cross-env TS_NODE_PROJECT=tsconfig.spec.json mocha",
+    "test": "nyc -e '.ts' --r html -r lcov -r text npm run test:unit"
+  },
+  "author": "Micha_i <isalski.michal@gmail.com> (https://github.com/michalusio)",
+  "main": "dist/index.js",
+  "dependencies": {
+    "parser-combinators": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.7.6",
+    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/parser": "^4.14.2",
+    "cross-env": "^7.0.3",
+    "eslint": "^7.15.0",
+    "istanbul": "1.1.0-alpha.1",
+    "mocha": "^9.1.0",
+    "nyc": "^15.1.0",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.2.4"
+  },
+  "keywords": []
+}
