@@ -1,7 +1,10 @@
 import { ASTStatement } from '../language/interfaces';
-import { visitTable } from '../visitor';
+import { visit, visitTable } from '../visitor';
 import { typeDeclarationCheckVisitor } from './type-declaration-check';
+import { variableDeclarationCheckVisitor } from './variable-declaration-check';
 
 export function check(root: ASTStatement): ASTStatement {
-  return visitTable(['object', 'let', 'function', 'parameter', 'property'], typeDeclarationCheckVisitor(), root, undefined);
+  root = visitTable(['object', 'let', 'function', 'parameter', 'property'], typeDeclarationCheckVisitor(), root, undefined);
+  root = visit('function', variableDeclarationCheckVisitor, root, undefined);
+  return root;
 }

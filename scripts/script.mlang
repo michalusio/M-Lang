@@ -1,9 +1,8 @@
 import "./script2.mlang";
 import "./script3.mlang";
+import "system";
 
-// comments?
-type SomeObject {
-  int32 id;
-  int64 userId;
-  string someData;
-}
+// I don't think void[] should be allowed?
+void main() {
+  log("some value");
+} 

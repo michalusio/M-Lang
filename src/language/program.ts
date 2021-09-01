@@ -8,6 +8,7 @@ import { functionDeclaration } from './function-declaration';
 import { Declaration, ImportDeclaration, Program } from './interfaces';
 import { objectDeclaration } from './object-declarations';
 import { stringStatement } from './statements/statements';
+import { systemImport } from './system-calls';
 
 const declaration = (): Parser<Declaration> => any(
   expect(objectDeclaration(), 'object declaration'),
@@ -34,10 +35,11 @@ function importDeclaration(): Parser<ImportDeclaration> {
   }
 }
 
-const parseCache: Map<string, Program> = new Map();
+const parseCache: Map<string, Program> = new Map([['system', systemImport]]);
 
 export function clearParseCache(): void {
     parseCache.clear();
+    parseCache.set('system', systemImport);
 }
 
 function getFromCache(path: string): Program | undefined {

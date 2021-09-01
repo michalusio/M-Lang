@@ -25,11 +25,12 @@ function properties(): Parser<Property[]> {
 export function objectDeclaration(): Parser<ObjectDeclaration> {
   return map(
       seq(
-          str('type'),
-          spacesPlus,
-          objectName,
-          between(seq(wspacesOrComment, str('{')), properties(), seq(wspacesOrComment, str('}')))
+        opt(seq(str('export'), spacesPlus)),
+        str('type'),
+        spacesPlus,
+        objectName,
+        between(seq(wspacesOrComment, str('{')), properties(), seq(wspacesOrComment, str('}')))
       ),
-      ([, , name, params]) => ({kind: 'object', name, properties: params})
+      ([exported, , , name, params]) => ({kind: 'object', exported: !!exported, name, properties: params})
   );
 }

@@ -1,4 +1,4 @@
-import { basicRuntimeTypes } from '../language/basic-runtime-types';
+import { basicRuntimeTypeNames } from '../language/basic-runtime-types';
 import {
   ASTStatement,
   FunctionDeclaration,
@@ -8,15 +8,14 @@ import {
   Property,
 } from '../language/interfaces';
 
-
-
 export function typeDeclarationCheckVisitor(): (node: ObjectDeclaration | LetStatement | FunctionDeclaration | Parameter | Property) => ASTStatement {
-  const declaredTypes: string[] = [...basicRuntimeTypes];
+  const declaredTypes: string[] = [...basicRuntimeTypeNames];
   return (node: ObjectDeclaration | LetStatement | FunctionDeclaration | Parameter | Property): ASTStatement => {
       if (node.kind === 'object') {
         declaredTypes.push(node.name);
       }
-      else if (!declaredTypes.includes(node.type)) throw new Error(`Type ${node.type} is not declared`);
+      else if (node.type.name === 'void' && node.type.isArray) throw new Error(`Type void[] is not allowed`);
+      else if (!declaredTypes.includes(node.type.name)) throw new Error(`Type ${node.type.name} is not declared`);
 
       return node;
     }

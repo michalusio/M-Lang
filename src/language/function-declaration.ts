@@ -14,6 +14,7 @@ const parameters = oneOrMany(parameter(), str(','));
 export function functionDeclaration(): Parser<FunctionDeclaration> {
   return map(
       seq(
+          opt(seq(str('export'), spacesPlus)),
           functionReturnType,
           spacesPlus,
           functionName,
@@ -22,6 +23,6 @@ export function functionDeclaration(): Parser<FunctionDeclaration> {
           wspacesOrComment,
           scope()
       ),
-      ([type, , name, , params, , scope]) => ({kind: 'function', type, name, params: params ?? [], body: scope})
+      ([exported, type, , name, , params, , scope]) => ({kind: 'function', exported: !!exported, type, name, params: params ?? [], body: scope})
   );
 }

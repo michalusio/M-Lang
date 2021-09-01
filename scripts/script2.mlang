@@ -1,6 +1,12 @@
 import "./script3.mlang";
 
 string someFunctionName() {
-  int16 a;
-  int16 c = a;
+  SomeSomeObject a;
+  int16 c = a.userId;
+}
+
+export type SomeSomeObject {
+  int32 id;
+  int16 userId;
+  string someData;
 }

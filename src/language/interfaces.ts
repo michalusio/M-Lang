@@ -1,5 +1,12 @@
+export type Type = Readonly<{
+  kind: 'type';
+  name: string;
+  isArray: boolean;
+}>;
+
 export type ObjectDeclaration = Readonly<{
   kind: 'object';
+  exported: boolean;
   name: string;
   properties: Property[];
 }>;
@@ -7,13 +14,14 @@ export type ObjectDeclaration = Readonly<{
 export type Property = Readonly<{
   kind: 'property';
   name: string;
-  type: string;
+  type: Type;
 }>;
 
 export type FunctionDeclaration = Readonly<{
   kind: 'function';
+  exported: boolean;
   name: string;
-  type: string;
+  type: Type;
   params: Parameter[];
   body: Scope;
 }>;
@@ -26,7 +34,7 @@ export type Scope = Readonly<{
 export type Parameter = Readonly<{
   kind: 'parameter';
   name: string;
-  type: string;
+  type: Type;
 }>;
 
 export type ImportDeclaration = Readonly<{
@@ -46,7 +54,7 @@ export type Declaration = FunctionDeclaration | ObjectDeclaration;
 export type LetStatement = Readonly<{
   kind: 'let';
   name: string;
-  type: string;
+  type: Type;
   assignment: RStatement | undefined;
 }>;
 
@@ -114,7 +122,7 @@ export type VariableStatement = Readonly<{
 
 export type PropertyStatement = Readonly<{
   kind: 'propertyAccess',
-  to: LStatement,
+  to: VariableStatement,
   from: LStatement | MethodCallStatement
 }>;
 
@@ -126,4 +134,4 @@ export type IndexingStatement = Readonly<{
 
 export type LStatement = VariableStatement | PropertyStatement | IndexingStatement;
 
-export type ASTStatement = Statement | RStatement | Declaration | Program | Property | Parameter | ImportDeclaration;
+export type ASTStatement = Statement | RStatement | Declaration | Program | Property | Parameter | ImportDeclaration | Type;

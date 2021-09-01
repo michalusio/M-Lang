@@ -7,7 +7,6 @@ import { optimize } from './optimizers/optimizer';
 console.time('parsing');
 const res = ParseFile('./scripts/script.mlang', program());
 console.timeEnd('parsing');
-
 if (res) {
   console.time('checking');
   const checked = check(res);
@@ -16,7 +15,5 @@ if (res) {
     console.time('optimizing');
     const optimized = optimize(res);
     console.timeEnd('optimizing');
-
-    console.log(JSON.stringify(optimized, null, 2));
   }
 }
