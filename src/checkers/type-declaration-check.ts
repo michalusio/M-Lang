@@ -14,7 +14,6 @@ export function typeDeclarationCheckVisitor(): (node: ObjectDeclaration | LetSta
       if (node.kind === 'object') {
         declaredTypes.push(node.name);
       }
-      else if (node.type.name === 'void' && node.type.isArray) throw new Error(`Type void[] is not allowed`);
       else if (!declaredTypes.includes(node.type.name)) throw new Error(`Type ${node.type.name} is not declared`);
 
       return node;

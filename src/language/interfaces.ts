@@ -110,7 +110,7 @@ ArithmeticStatement;
 
 export type ArithmeticStatement = Readonly<{
   kind: 'arithmetic',
-  operator: '+' | '-' | '*' | '/',
+  operator: '+' | '-' | '*' | '/' | '==' | '!=' | '>' | '<' | '>=' | '<=',
   left: RStatement,
   right: RStatement
 }>;

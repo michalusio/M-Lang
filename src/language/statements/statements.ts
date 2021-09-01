@@ -15,6 +15,7 @@ import {
 } from 'parser-combinators/parsers';
 import { Context, Parser, Result } from 'parser-combinators/types';
 
+import { BasicOperatorsEnum, ComparisonOperatorsEnum, OrderingOperatorsEnum } from '../arithmetic-operators';
 import { parameterName, wspacesOrComment } from '../core';
 import {
   ArithmeticStatement,
@@ -103,13 +104,25 @@ function operator<T extends string>(op: T): Parser<T> {
   return between(wspacesOrComment, str(op), wspacesOrComment);
 }
 
-const addSubSeparator = any(operator('+'), operator('-'));
-const mulDivSeparator = any(operator('*'), operator('/'));
+const addSubSeparator = any(operator(BasicOperatorsEnum.ADD), operator(BasicOperatorsEnum.SUBTRACT));
+const mulDivSeparator = any(operator(BasicOperatorsEnum.MULTIPLY), operator(BasicOperatorsEnum.DIVIDE));
+const comparisonSeparator = any(
+  operator(OrderingOperatorsEnum.LESS_THAN),
+  operator(OrderingOperatorsEnum.LESS_THAN_OR_EQUAL),
+  operator(OrderingOperatorsEnum.GREATER_THAN),
+  operator(OrderingOperatorsEnum.GREATER_THAN_OR_EQUAL),
+  operator(ComparisonOperatorsEnum.EQUAL),
+  operator(ComparisonOperatorsEnum.NOT_EQUAL)
+);
 
 const anyNormalRStatement = any(realStatement, intStatement, boolStatement, stringStatement, methodCall(), lStatement());
 
 export function rStatement(): Parser<RStatement> {
-  return expect(expr(), 'R statement');
+  return expect(comparisonExpr(), 'R statement');
+}
+
+function comparisonExpr(): Parser<RStatement> {
+  return oneOrManyRed(expr(), comparisonSeparator, (left, right, operator) => <ArithmeticStatement>({kind: "arithmetic", operator, left, right}));
 }
 
 function expr(): Parser<RStatement> {
@@ -122,5 +135,5 @@ function multExpr(): Parser<RStatement> {
 }
 
 function primaryExpr(): Parser<RStatement> {
-  return any(anyNormalRStatement, between(str('('), expr(), str(')')));
+  return any(anyNormalRStatement, between(str('('), comparisonExpr(), str(')')));
 }

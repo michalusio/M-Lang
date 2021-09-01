@@ -4,5 +4,9 @@ import "system";
 
 // I don't think void[] should be allowed?
 void main() {
-  log("some value");
+  if (true) {
+    log("some value");
+  } else if (false) {
+    log("some other value");
+  }
 } 

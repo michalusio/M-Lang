@@ -1,4 +1,4 @@
-import { indexerTypes } from '../language/basic-runtime-types';
+import { basicRuntimeTypes, indexerTypes } from '../language/basic-runtime-types';
 import {
   ASTStatement,
   Declaration,
@@ -24,6 +24,7 @@ type StatementProblem =
 | { type: 'propertyMissingFromObject', statement: PropertyStatement }
 | { type: 'objectTypeMissing', statement: LStatement }
 | { type: 'tooManyArguments', statement: MethodCallStatement }
+| { type: 'ifNeedsBool', statement: RStatement }
 | null;
 
 type FunctionType = Type & {
@@ -45,6 +46,7 @@ export function variableDeclarationCheckVisitor(node: FunctionDeclaration, paren
   node.params.forEach(param => {
     variables.push(param.name);
     types.set(param.name, param.type);
+    decorateWithTypes(param, param.type);
   });
   const result = checkScope(node.body, variables, types);
   if (result) {
@@ -67,6 +69,8 @@ export function variableDeclarationCheckVisitor(node: FunctionDeclaration, paren
         throw new Error(`Property missing from object on: ${stringifyStatement(result.statement)}`);
       case 'tooManyArguments':
         throw new Error(`Too many arguments in function call on: ${stringifyStatement(result.statement)}`);
+      case 'ifNeedsBool':
+        throw new Error(`If statement needs a bool on: ${stringifyStatement(result.statement)}`);
     }
   }
   return node;
@@ -96,6 +100,7 @@ function checkStatement(line: Statement, declaredVariables: string[], variableTy
       }
       declaredVariables.push(line.name);
       variableTypes.set(line.name, line.type);
+      decorateWithTypes(line, line.type);
       return null;
 
     case 'assignment':
@@ -109,7 +114,12 @@ function checkStatement(line: Statement, declaredVariables: string[], variableTy
       return typeResult;
 
     case 'if':
-      return checkStatement(line.then, [...declaredVariables], new Map(variableTypes)) || (line.elseThen ? checkStatement(line.elseThen, [...declaredVariables], new Map(variableTypes)) : null);
+      const result = checkRStatement(line.condition, declaredVariables, variableTypes) || checkStatement(line.then, [...declaredVariables], new Map(variableTypes)) || (line.elseThen ? checkStatement(line.elseThen, [...declaredVariables], new Map(variableTypes)) : null);
+      if (result) return result;
+      const conditionType = variableTypes.get(stringifyStatement(line.condition)) as Type;
+      if (!conditionType || conditionType.name !== basicRuntimeTypes[1].name || conditionType.isArray) 
+        return { type: 'ifNeedsBool', statement: line.condition };
+      return null;
 
     case 'methodCall':
       return checkMethodCall(line, declaredVariables, variableTypes);
@@ -127,11 +137,21 @@ function checkRStatement(statement: RStatement, declaredVariables: string[], var
     case 'arithmetic':
       const result = checkRStatement(statement.left, declaredVariables, variableTypes) || checkRStatement(statement.right, declaredVariables, variableTypes);
       if (result) return result;
-      const typeResult: StatementProblem = typesEqual(variableTypes.get(stringifyStatement(statement.left)), variableTypes.get(stringifyStatement(statement.right)))
+
+      const leftType = variableTypes.get(stringifyStatement(statement.left));
+      const rightType = variableTypes.get(stringifyStatement(statement.right));
+
+      const typeResult: StatementProblem = typesEqual(leftType, rightType)
         ? null
-        : { type: 'typeMismatch', statement, type1: variableTypes.get(stringifyStatement(statement.left)), type2: variableTypes.get(stringifyStatement(statement.right)) };
+        : { type: 'typeMismatch', statement, type1: leftType, type2: rightType };
       if (typeResult) return typeResult;
-      variableTypes.set(stringifyStatement(statement), variableTypes.get(stringifyStatement(statement.left)) as Type);
+
+      const resultantType = statement.operator === '+' || statement.operator === '-' || statement.operator === '*' || statement.operator === '/'
+        ? leftType
+        : basicRuntimeTypes[1];
+
+      variableTypes.set(stringifyStatement(statement), resultantType as Type);
+      decorateWithTypes(statement, resultantType as Type);
       return null
 
     case 'variable':
@@ -140,19 +160,23 @@ function checkRStatement(statement: RStatement, declaredVariables: string[], var
       return checkLStatement(statement, declaredVariables, variableTypes);
     
     case 'stringValue':
-      variableTypes.set(stringifyStatement(statement), { kind: 'type', isArray: false, name: 'string' });
+      variableTypes.set(stringifyStatement(statement), basicRuntimeTypes[2]);
+      decorateWithTypes(statement, basicRuntimeTypes[2]);
       return null;
 
     case 'intValue':
-      variableTypes.set(stringifyStatement(statement), { kind: 'type', isArray: false, name: 'int32' });
+      variableTypes.set(stringifyStatement(statement), basicRuntimeTypes[5]);
+      decorateWithTypes(statement, basicRuntimeTypes[5]);
       return null;
 
     case 'boolValue':
-      variableTypes.set(stringifyStatement(statement), { kind: 'type', isArray: false, name: 'bool' });
+      variableTypes.set(stringifyStatement(statement), basicRuntimeTypes[1]);
+      decorateWithTypes(statement, basicRuntimeTypes[1]);
       return null;
 
     case 'realValue':
       variableTypes.set(stringifyStatement(statement), { kind: 'type', isArray: false, name: 'real64' });
+      decorateWithTypes(statement, { kind: 'type', isArray: false, name: 'real64' });
       return null;
   }
 }
@@ -177,6 +201,7 @@ function checkLStatement(statement: LStatement, declaredVariables: string[], var
       if (indexType.isArray || !indexerTypes.includes(indexType.name)) return { type: 'typeNotIndexer', statement: statement.index };
       
       variableTypes.set(stringifyStatement(statement), { kind: 'type', name: varType.name, isArray: false });
+      decorateWithTypes(statement, { kind: 'type', name: varType.name, isArray: false });
       return null;
     }
 
@@ -193,6 +218,7 @@ function checkLStatement(statement: LStatement, declaredVariables: string[], var
 
       if (!fromTypeDeclaration.props.has(statement.to.name)) return <StatementProblem>{ type: 'propertyMissingFromObject', statement };
       variableTypes.set(stringifyStatement(statement), fromTypeDeclaration.props.get(statement.to.name) as Type);
+      decorateWithTypes(statement, fromTypeDeclaration.props.get(statement.to.name) as Type);
       return null;
     }
   }
@@ -216,6 +242,7 @@ function checkMethodCall(line: MethodCallStatement, declaredVariables: string[],
     if (!typesEqual(argType, methodArgType)) return { type: 'typeMismatch', statement: line, type1: methodArgType, type2: argType };
   }
   variableTypes.set(stringifyStatement(line), methodType);
+  decorateWithTypes(line, methodType);
   return null;
 }
 
@@ -271,6 +298,10 @@ function stringifyStatement(statement: ASTStatement): string {
     case 'import':
       return `import "${statement.path}"`;
   }
+}
+
+function decorateWithTypes(st: ASTStatement, type: Type): void {
+  (st as { type: Type }).type = type;
 }
 
 function typesEqual(t1: Type | undefined, t2: Type | undefined): boolean {

@@ -1,10 +1,14 @@
-import { any, map, oneOrMany, opt, regex, seq, str, wspaces } from 'parser-combinators/parsers';
+import { any, map, oneOrMany, opt, ref, regex, seq, str, wspaces } from 'parser-combinators/parsers';
 import { Parser } from 'parser-combinators/types';
 
 import { Type } from './interfaces';
 
 export const typeDef = (expects: string): Parser<string> => regex(/[a-zA-Z][\w\d]*/, expects);
-export const type = (expects: string): Parser<Type> => map(seq(regex(/[a-zA-Z][\w\d]*/, expects), opt(str('[]'))), ([name, array]) => ({ kind: 'type', name, isArray: !!array}));
+export const type = (expects: string): Parser<Type> => ref(
+  map(seq(regex(/[a-zA-Z][\w\d]*/, expects), opt(str('[]'))), ([name, array]) => ({ kind: 'type', name, isArray: !!array})),
+  (type) => type.name !== 'void' || !type.isArray,
+  'Type void[] is not allowed'
+);
 export const name = (expects: string): Parser<string> => regex(/[a-zA-Z_][\w\d]*/, expects);
 
 export const functionReturnType = type('function return type');
